@@ -1,4 +1,3 @@
-import e from "express"
 import { IncomingMessage, ServerResponse } from "node:http"
 
 /**
@@ -27,6 +26,18 @@ function createLogger(functionName) {
 
 /**
  * 
+ * @param {ServerResponse} response 
+ * @param {string} message 
+ */
+function sendPlainResponse(response, message) {
+
+    response.setHeader("Content-Type", "text/plain")
+    response.end(message)
+
+}
+
+/**
+ * 
  * @param {string} varName 
  * @param {unknown} varValue
  * @param {string | undefined} [message] 
@@ -38,6 +49,30 @@ function assertDefined(varName, varValue, message) {
         throw new Error(errMessage)
     }
 }
+
+/**
+ * 
+ * @param {URL} url 
+ * @param {ServerResponse} response 
+ */
+function userLogin(url, response) {
+
+    sendPlainResponse(response, "Auth")
+
+}
+
+const routes = [
+    {
+        /** Ths path in the url to match */
+        path: "/AuthLogin",
+        /** The handler
+         * 
+         * @param {URL} url
+         * @param {ServerResponse} response
+         */
+        response: userLogin
+    }
+]
 
 /**
  * 
@@ -53,14 +88,26 @@ export function requestListener(request, response) {
     assertDefined("methos", method)
     assertDefined("url", url)
 
-    const { remoteAddress, localPort } = socket
+    const { remoteAddress, localPort, localAddress } = socket
 
     assertDefined("remoteAddress", remoteAddress)
     assertDefined("localport", localPort)
+    assertDefined("localAddress", localAddress)
 
-    log.info(`${remoteAddress} ${method} ${url}`)
+    const parsedURL = new URL(url ?? "", `http://${localAddress}`)
+    
+    log.info(`${remoteAddress} ${method} ${parsedURL.pathname}`)
 
-    response.end("Hello")
+
+
+    for (const route of routes) {
+        if (parsedURL.pathname.startsWith(route.path)) {
+            route.response(parsedURL, response)
+            return
+        }
+    }
+
+    sendPlainResponse(response, "Hello")
 
 }
 
