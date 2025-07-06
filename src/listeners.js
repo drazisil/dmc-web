@@ -6,6 +6,7 @@ import { getSessionService } from "./session.js"
 import { getShardService, shardToString } from "./shard.js"
 import { Socket } from "node:net"
 import { randomUUID } from "node:crypto"
+import { handleData } from "./packet.js"
 
 /**
  * 
@@ -167,23 +168,7 @@ export function cbServerListener(port) {
     console.log(`Listening on port: ${port}`)
 }
 
-/**
- * 
- * @param {string} connectionId 
- * @param {Buffer} data 
- * @param {(data: Buffer) => void} writer 
- */
-function handleData( connectionId, data, writer) {
 
-    const log = createLogger(connectionId)
-
-    log.info(`Recieved data: ${data.toString("hex")}`)
-
-    // TODO: Handle data
-
-    // TODO: send any responses
-
-}
 
 /**
  * 
