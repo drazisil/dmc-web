@@ -2,7 +2,18 @@ import { IncomingMessage, ServerResponse } from "node:http"
 import { createLogger } from "./createLogger.js"
 import { assertDefined, sendPlainResponse } from "./helpers.js"
 import { getUserService } from "./user.js"
+import { getSessionService } from "./session.js"
 
+/**
+ * 
+ * @param {URL} url 
+ * @param {ServerResponse} response 
+ */
+function shardList(url, response) {
+
+    // TODO: add real shard list
+    return sendPlainResponse(response, "hmm")
+}
 
 
 /**
@@ -12,18 +23,36 @@ import { getUserService } from "./user.js"
  */
 function userLogin(url, response) {
 
-    const username = url.searchParams.get("username") ?? undefined
-    const password = url.searchParams.get("password") ?? undefined
+    const log = createLogger("userLogin")
+
+    // The inputs are verified inside checkLogin, 
+    const username = url.searchParams.get("username")
+    const password = url.searchParams.get("password")
+
+    if (username === null || password === null) {
+        log.info('Either username or password were not passed to handler')
+        return sendPlainResponse(response, "Nope")
+    }
 
     const userService = getUserService()
 
-    const loginValid = userService.checkLogin(username, password)
+    const customerId = userService.checkLogin(username, password)
 
-    if (loginValid) {
+    if (customerId) {
 
         // TODO: Get customer id, generate and save session
+        const sessionService = getSessionService()
 
-        return sendPlainResponse(response, "Auth")
+        const sessionId = sessionService.generateSessionId()
+
+        const saveSuccess = sessionService.update(sessionId, customerId)
+
+        if (!saveSuccess) {
+            log.info(`There was an eror saving the session for customerId ${customerId}`)
+            return sendPlainResponse(response, "no")
+        }
+
+        return sendPlainResponse(response, `Valid=TRUE\nTicket=${sessionId}`)
     }
 
     return sendPlainResponse(response, "Nope")
@@ -32,16 +61,18 @@ function userLogin(url, response) {
 }
 
 // TODO: Add /ShardList/ route
+/**
+ * path is the url to match, response is the resppnse handler
+ * @type {{path: string, response: (url: URL, response: ServerResponse) => void}[]}
+ */
 const routes = [
     {
-        /** Ths path in the url to match */
         path: "/AuthLogin",
-        /** The handler
-         * 
-         * @param {URL} url
-         * @param {ServerResponse} response
-         */
         response: userLogin
+    },
+    {
+        path: "/ShardList/",
+        response: shardList
     }
 ]
 
