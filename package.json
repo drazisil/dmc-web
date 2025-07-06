@@ -12,12 +12,10 @@
   "type": "module",
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
-    "@types/express": "^5.0.3",
     "@types/node": "^24.0.10",
     "typescript": "^5.8.3"
   },
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "express": "^5.1.0"
+    "bcrypt": "^6.0.0"
   }
 }

@@ -3,6 +3,9 @@ import { createLogger } from "./createLogger.js"
 import { assertDefined, sendPlainResponse } from "./helpers.js"
 import { getUserService } from "./user.js"
 import { getSessionService } from "./session.js"
+import { getShardService, shardToString } from "./shard.js"
+import { Socket } from "node:net"
+import { randomUUID } from "node:crypto"
 
 /**
  * 
@@ -29,8 +32,17 @@ function invalidAuth(code, reason, url) {
  */
 function shardList(url, response) {
 
-    // TODO: add real shard list
-    return sendPlainResponse(response, "hmm")
+    const shardService = getShardService()
+
+    const activeshards = shardService.getShards()
+
+    let formattedShards = []
+
+    for (const shard of activeshards) {
+        formattedShards.push(shardToString(shard))
+    }
+
+    return sendPlainResponse(response, formattedShards.join("\n\n"))
 }
 
 
@@ -99,7 +111,7 @@ const routes = [
  * @param {IncomingMessage} request 
  * @param {ServerResponse} response 
  */
-export function requestListener(request, response) {
+export function httpRequestListener(request, response) {
 
     const log = createLogger("requestListener")
 
@@ -153,4 +165,82 @@ export function cbServerListener(port) {
     }
 
     console.log(`Listening on port: ${port}`)
+}
+
+/**
+ * 
+ * @param {string} connectionId 
+ * @param {Buffer} data 
+ * @param {(data: Buffer) => void} writer 
+ */
+function handleData( connectionId, data, writer) {
+
+    const log = createLogger(connectionId)
+
+    log.info(`Recieved data: ${data.toString("hex")}`)
+
+    // TODO: Handle data
+
+    // TODO: send any responses
+
+}
+
+/**
+ * 
+ * @param {string} connectionId 
+ * @param {Socket} socket 
+ * @param {Buffer} data 
+ */
+function socketDataListener(connectionId, socket, data) {
+
+    /**
+     * 
+     * @param {Buffer} data 
+     */
+    const sendToSocket = (data) => {
+        if (!socket.writable) {
+            throw new Error(`Error writing to the socket fore connection ${connectionId}: socket not writable!`)
+        }
+    }
+
+    handleData(connectionId, data, sendToSocket)
+
+}
+
+/**
+ * 
+ * @param {Socket} socket 
+ */
+function setupSocketListeners(socket) {
+
+    const connectionId = randomUUID()
+
+    const log = createLogger(connectionId)
+
+    socket.on("error", serverErrorListener)
+    socket.on("close", function(hadError) { if (hadError) { log.info('Error: Server was closed with an error')}})
+    socket.on("data", function(data) {socketDataListener(connectionId, socket, data)})
+}
+
+/**
+ * 
+ * @param {Socket} socket 
+ */
+export function tcpConnectionListener(socket) {
+
+    const log = createLogger("tcpConnectionListener")
+
+    const {remoteAddress, localPort} = socket
+
+    if (typeof remoteAddress === "undefined" || typeof localPort === "undefined") {
+        log.info('Error: either remoreAddress or localPort were undefined when connection handler was called')
+        return
+    }
+
+    log.info(`New connection of port ${localPort} from ${remoteAddress}`)
+
+    setupSocketListeners(socket)
+
+
+
 }
