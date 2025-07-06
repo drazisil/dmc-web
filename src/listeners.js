@@ -6,6 +6,24 @@ import { getSessionService } from "./session.js"
 
 /**
  * 
+ * @param {string} sessionId 
+ */
+function validAuth(sessionId) {
+    return `Valid=TRUE\nTicket=${sessionId}`;
+}
+
+/**
+ * 
+ * @param {string} code 
+ * @param {string} reason 
+ * @param {string} url 
+ */
+function invalidAuth(code, reason, url) {
+    return `reasoncode=${code}\nreasontext=${reason}\nreasonurl=${url}`;
+}
+
+/**
+ * 
  * @param {URL} url 
  * @param {ServerResponse} response 
  */
@@ -31,7 +49,7 @@ function userLogin(url, response) {
 
     if (username === null || password === null) {
         log.info('Either username or password were not passed to handler')
-        return sendPlainResponse(response, "Nope")
+        return sendPlainResponse(response, invalidAuth("INV-100", "opps", "rusty-motors.com/errors"))
     }
 
     const userService = getUserService()
@@ -49,13 +67,13 @@ function userLogin(url, response) {
 
         if (!saveSuccess) {
             log.info(`There was an eror saving the session for customerId ${customerId}`)
-            return sendPlainResponse(response, "no")
+            return sendPlainResponse(response, invalidAuth("INV-100", "opps", "rusty-motors.com/errors"))
         }
 
-        return sendPlainResponse(response, `Valid=TRUE\nTicket=${sessionId}`)
+        return sendPlainResponse(response, validAuth(sessionId))
     }
 
-    return sendPlainResponse(response, "Nope")
+    return sendPlainResponse(response, invalidAuth("INV-100", "opps", "rusty-motors.com/errors"))
 
 
 }
