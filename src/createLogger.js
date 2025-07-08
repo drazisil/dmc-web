@@ -1,9 +1,10 @@
 /**
  *
  * @param {string} functionName
+ * @param {string} [connectionId]
  * @returns
  */
-export function createLogger(functionName) {
+export function createLogger(functionName, connectionId) {
 
     const getTimestamp = () => {
         return new Date().toISOString();
@@ -17,7 +18,14 @@ export function createLogger(functionName) {
         info: (message) => {
             const now = getTimestamp();
 
-            console.log(`${now} - [INFO] (${functionName}) ${message}`);
+            console.log(JSON.stringify({
+                date: now,
+                level: "INFO",
+                functionName,
+                connectionId,
+                message: message
+            }
+            ))
         }
     };
 }
