@@ -1,4 +1,50 @@
+import { readFileSync } from "node:fs";
 import { createLogger } from "../createLogger.js";
+import { privateDecrypt } from "node:crypto";
+
+/**
+ * @property {number} endingIndex
+ * @property {Buffer} value
+ */
+class NPSMessageContainer {
+
+        /**
+     * 
+     * @param {Buffer} data 
+     * @param {number} startingIndex 
+     */
+    constructor(data, startingIndex) {
+              let remainingData = Buffer.from(data.subarray(startingIndex))
+
+        if ( remainingData.length < 4) {
+            throw new Error('Unable to read string length header, not enough remaining data')
+        }
+
+        this.length = remainingData.readInt16BE(2)
+
+        if (remainingData.length - 4 < this.length) {
+            throw new Error(`Not enough data left to get string. Got ${remainingData.length - 4}, expected ${this.length}`)
+        }
+
+        this.value = remainingData.subarray(4, this.length + 4)
+        this.endingIndex = startingIndex + 4 + this.length  
+    }
+
+        /**
+     * 
+     * @param {Buffer} data 
+     * @param {number} startingIndex 
+     * @returns {{endingIndex: number, value: Buffer}}
+     */
+    static parse(data, startingIndex) {
+        const self = new NPSMessageContainer(data, startingIndex)
+
+        return {
+            endingIndex: self.endingIndex,
+            value: self.value
+        }
+    }
+}
 
 /**
  * @property {number} endingIndex
@@ -63,6 +109,20 @@ function trimNPSGameMessageHeader(data) {
 
 /**
  * 
+ * @param {Buffer} data 
+ * @param {string} keyFile 
+ */
+function decryptSessionKey(data, keyFile) {
+        const privateKeyString = readFileSync(keyFile)
+
+    const decryptedSessionKeyConatiner = privateDecrypt(privateKeyString, Buffer.from(data.toString(), "hex"))
+
+    return Buffer.from(decryptedSessionKeyConatiner.subarray(2, 34))
+
+}
+
+/**
+ * 
  * @param {string} connectionId 
  * @param {Buffer} data 
  * @returns {Buffer | null}
@@ -92,7 +152,22 @@ export function npsUserLogin(connectionId, data) {
     const payload = trimNPSGameMessageHeader(data)
 
     let result = NPSFixedLengthString.parse(payload, 0)
-    log.info(`value: ${result.value}, nextIndex: ${result.endingIndex}`)
+
+    const contextId = result.value
+
+    let nextIndex = result.endingIndex
+
+    const result2 = NPSMessageContainer.parse(payload, nextIndex)
+
+    const sessionKeyConatiner = /** @type {Buffer} */ result2.value
+
+    const sessionKeyBuffer = decryptSessionKey(sessionKeyConatiner, "./data/private_key.pem")
+
+
+    log.info(JSON.stringify({
+        contextId, 
+        sessionKeyConatiner: sessionKeyBuffer.toString("hex")
+    }))
 
 
     return responseData
