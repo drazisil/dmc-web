@@ -4,7 +4,7 @@ import { createLogger } from "./createLogger.js"
 
 /**
  * TODO: Replace with database
- * Key is the sessioId, value is the customerId
+ * Key is the sessionId, value is the customerId
  * @type {Map<string, number>}
  */
 const demoSessions = new Map()
