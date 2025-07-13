@@ -43,8 +43,6 @@ jobs:
         name: ${{ matrix.node-version }}
         # Comma-separated list of plugins to run. Specify `noop` to turn off all plugins
         plugins: noop
-        # Use OIDC instead of token. This will ignore any token supplied
-        use_oidc: true
         # Enable verbose logging
         verbose: true
               
