@@ -28,6 +28,13 @@ suite("serialization functions", () => {
         /"true" is not a boolean value/)
         })
 
+        test("throws if offset is not a number", () => {
+            assert.throws(() => {
+                serializeBool(Buffer.alloc(3), "6", true)
+            },
+            /Error: "6 is not a valid number/
+        )})
+
         test("throws if buffer is too short", () => {
             assert.throws(() => {
                 serializeBool(Buffer.alloc(3), 4, true)
