@@ -35,6 +35,7 @@ jobs:
       # uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24
       uses: codecov/codecov-action@v5.4.3
       with:
+        token: ${{ secrets.CODECOV_TOKEN }}
         # Folder to search for coverage files. Default to the current working directory
         directory: coverage
         # On error, exit with non-zero code
