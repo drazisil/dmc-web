@@ -81,28 +81,71 @@ export function deserializeBool(buff, offset) {
 
 /**
  * 
+ * @param {number} n
+ * @returns {{min: number, max: number}}
+ */
+function calculateRangesSigned(n) {
+    return {
+        min: -Math.pow(2, (8 * n - 1)),
+        max: Math.pow(2, (8 * n - 1)) - 1
+    }
+}
+
+/**
+ * 
+ * @param {number} n
+ * @returns {{min: number, max: number}}
+ */
+function calculateRangesUnSigned(n) {
+    return {
+        min: 0,
+        max: Math.pow(2, (8 * n)) - 1
+    }
+}
+
+/**
+ * 
+ * @param {number} n
+ * @returns {{min: number, max: number}}
+ */
+function calculateRanges(n, signed = false) {
+    if (signed) {
+        return calculateRangesSigned(n)
+    }
+    return calculateRangesUnSigned(n)
+}
+
+
+/**
+ * 
  * @param {number} v
  * @param {number} n
  * @param {boolean}  signed
  * @returns {void}
  * @throws if v is outside the range allowed for signed or unsigned numbers in n bytes
  */
-function calculateRanges(v, n, signed =false) {
-    let min
-    let max
-
-    if (signed) {
-        min = -Math.pow(2, (8 * n - 1));
-        max = Math.pow(2, (8 * n - 1)) - 1;
-    } else {
-        min = 0;
-        max = Math.pow(2, (8 * n)) - 1;
+export function isInValidRange(v, n, signed =false) {
+    if (typeof v !== "number") {
+        throw new Error(`value ${v} is not a valid number`)
     }
+
+    if (typeof n !== "number") {
+        throw new Error(`value ${n} is not a valid number`)
+    }
+
+    if (typeof signed !== "boolean") {
+        throw new Error(`value ${signed} is not a valid boolean`)
+    }
+
+
+    const {min, max} = calculateRanges(n, signed)
+
     if (v < min || v > max) {
         throw new Error(`${v} is not within the range of ${min} and ${max}`)
     }
-
 }
+
+
 
 class BaseSerialize {
 
